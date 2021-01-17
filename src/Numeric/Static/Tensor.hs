@@ -46,4 +46,4 @@ class CreatableTensor (backend :: Backend) (dtype :: DataType) (shape :: Shape) 
   fromList :: [ToConcreteType dtype] -> Tensor backend dtype shape
 
 class IndexableTensor (backend :: Backend) (dtype :: DataType) (shape :: Shape) (index :: Shape) where
-  indexAt :: IsInRange index shape => Tensor backend dtype shape -> Proxy index -> ToConcreteType dtype
+  atIndex :: IsInRange index shape => Tensor backend dtype shape -> Proxy index -> ToConcreteType dtype

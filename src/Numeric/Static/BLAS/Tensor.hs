@@ -40,7 +40,7 @@ instance ( KnownNat s, KnownShape shape, s ~ ShapeSize shape, Storable (ToConcre
             return $ UnsafeMkTensor n NHWC ptr
 
 instance ( KnownShape ('D1 a), KnownShape ('D1 i) ) => IndexableTensor 'BLAS dtype ('D1 a) ('D1 i) where
-  indexAt (UnsafeMkTensor n format ptr) Proxy =
+  atIndex (UnsafeMkTensor n format ptr) Proxy =
     let !x = fromIntegral $ natVal (Proxy :: Proxy i)
     in  unsafePerformIO . withForeignPtr ptr $ \ptr' -> peekElemOff ptr' x
 
