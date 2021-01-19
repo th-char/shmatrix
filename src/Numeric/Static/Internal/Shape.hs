@@ -14,13 +14,21 @@ module Numeric.Static.Internal.Shape where
 import           Data.Constraint
 import           Data.Kind
 import           Data.Singletons
-import           GHC.TypeLits
+import           Data.Singletons.TypeLits hiding (natVal)
+import           GHC.TypeLits             hiding (natVal)
+import           GHC.TypeNats             (natVal)
 
 data Shape where
-  D1 :: {-# UNPACK #-} !Nat -> Shape
-  D2 :: {-# UNPACK #-} !Nat -> {-# UNPACK #-} !Nat -> Shape
-  D3 :: {-# UNPACK #-} !Nat -> {-# UNPACK #-} !Nat -> {-# UNPACK #-} !Nat -> Shape
-  D4 :: {-# UNPACK #-} !Nat -> {-# UNPACK #-} !Nat -> {-# UNPACK #-} !Nat -> {-# UNPACK #-} !Nat -> Shape
+  D1 :: Nat -> Shape
+  D2 :: Nat -> Nat -> Shape
+  D3 :: Nat -> Nat -> Nat -> Shape
+  D4 :: Nat -> Nat -> Nat -> Nat -> Shape
+
+data Index where 
+  Idx1 :: {-# UNPACK #-} !Int -> Index
+  Idx2 :: {-# UNPACK #-} !Int -> {-# UNPACK #-} !Int -> Index
+  Idx3 :: {-# UNPACK #-} !Int -> {-# UNPACK #-} !Int -> {-# UNPACK #-} !Int -> Index
+  Idx4 :: {-# UNPACK #-} !Int -> {-# UNPACK #-} !Int -> {-# UNPACK #-} !Int -> {-# UNPACK #-} !Int -> Index
 
 -- Singleton instances
 
@@ -30,13 +38,40 @@ data SShape :: Shape -> Type where
   D1Sing :: Sing a -> SShape ('D1 a)
   D2Sing :: Sing a -> Sing b -> SShape ('D2 a b)
   D3Sing :: Sing a -> Sing b -> Sing c -> SShape ('D3 a b c)
+  D4Sing :: Sing a -> Sing b -> Sing c -> Sing d -> SShape ('D4 a b c d)
 
 instance KnownNat a => SingI ('D1 a) where
   sing = D1Sing sing
 instance (KnownNat a, KnownNat b) => SingI ('D2 a b) where
   sing = D2Sing sing sing
-instance (KnownNat a, KnownNat b, KnownNat c, KnownNat (a * c)) => SingI ('D3 a b c) where
+instance (KnownNat a, KnownNat b, KnownNat c) => SingI ('D3 a b c) where
   sing = D3Sing sing sing sing
+instance (KnownNat a, KnownNat b, KnownNat c, KnownNat d) => SingI ('D4 a b c d) where
+  sing = D4Sing sing sing sing sing
+
+singToIndex :: SShape shape -> Index
+singToIndex s = case s of 
+    D1Sing a@SNat                      -> Idx1 (snatToInt a)
+    D2Sing a@SNat b@SNat               -> Idx2 (snatToInt a) (snatToInt b)
+    D3Sing a@SNat b@SNat c@SNat        -> Idx3 (snatToInt a) (snatToInt b) (snatToInt c)
+    D4Sing a@SNat b@SNat c@SNat d@SNat -> Idx4 (snatToInt a) (snatToInt b) (snatToInt c) (snatToInt d)
+  where
+    snatToInt :: forall n. KnownNat n => SNat n -> Int
+    snatToInt SNat = fromIntegral . natVal $ (Proxy :: Proxy n)
+
+
+-- Index types
+
+type Idx = SShape
+
+idx1 :: SingI ('D1 a) => Sing ('D1 a)
+idx1 = sing
+
+idx2 :: SingI ('D2 a b) => Sing ('D2 a b)
+idx2 = sing
+
+idx3 :: SingI ('D3 a b c) => Sing ('D3 a b c)
+idx3 = sing
 
 -- Lots of type families
 

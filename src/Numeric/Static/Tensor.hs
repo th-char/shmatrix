@@ -15,6 +15,7 @@ module Numeric.Static.Tensor where
 
 import           Data.Kind
 import           Data.Proxy
+import           Data.Singletons
 import           Foreign.ForeignPtr
 import           Foreign.Storable
 import           GHC.TypeLits
@@ -46,4 +47,4 @@ class CreatableTensor (backend :: Backend) (dtype :: DataType) (shape :: Shape) 
   fromList :: [ToConcreteType dtype] -> Tensor backend dtype shape
 
 class IndexableTensor (backend :: Backend) (dtype :: DataType) (shape :: Shape) (index :: Shape) where
-  atIndex :: IsInRange index shape => Tensor backend dtype shape -> Proxy index -> ToConcreteType dtype
+  atIndex :: ( IsInRange index shape ) => Tensor backend dtype shape -> Idx index -> ToConcreteType dtype

@@ -17,16 +17,17 @@ module Numeric.Static.BLAS.Tensor where
 
 import           Data.Kind
 import           Data.Proxy
+import           Data.Singletons
 import           Foreign.ForeignPtr
 import           Foreign.Storable
 import           GHC.TypeLits
 import           System.IO.Unsafe
 
+import           Numeric.Static.Internal.Memory
 import           Numeric.Static.Internal.Shape
 import           Numeric.Static.Tensor
-import           Numeric.Static.Internal.Memory
 
-instance ( KnownNat s, KnownShape shape, s ~ ShapeSize shape, Storable (ToConcreteType dtype) ) 
+instance ( KnownNat s, KnownShape shape, s ~ ShapeSize shape, Storable (ToConcreteType dtype) )
   => CreatableTensor 'BLAS dtype shape where
   -- TODO: need to work out where to do the shape check, is it worth possible space leak ?
   fromList xs =
@@ -40,8 +41,8 @@ instance ( KnownNat s, KnownShape shape, s ~ ShapeSize shape, Storable (ToConcre
             return $ UnsafeMkTensor n NHWC ptr
 
 instance ( KnownShape ('D1 a), KnownShape ('D1 i) ) => IndexableTensor 'BLAS dtype ('D1 a) ('D1 i) where
-  atIndex (UnsafeMkTensor n format ptr) Proxy =
-    let !x = fromIntegral $ natVal (Proxy :: Proxy i)
+  atIndex (UnsafeMkTensor n format ptr) s =
+    let Idx1 !x = singToIndex s
     in  unsafePerformIO . withForeignPtr ptr $ \ptr' -> peekElemOff ptr' x
 
 instance ( Show (ToConcreteType dtype) ) => Show (Tensor 'BLAS dtype shape) where

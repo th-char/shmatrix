@@ -39,7 +39,7 @@ prop_can_index_float_tensor = property $ do
             case ( someNatVal $ fromIntegral i ) of
               Just (SomeNat (_ :: Proxy i)) ->
                 case (unsafeCoerce (Dict :: Dict ((), ())) :: Dict (IsInRange ('D1 i) ('D1 length)) ) of
-                  Dict -> t `atIndex` (Proxy :: Proxy ('D1 i)) ) :: [Float]
+                  Dict -> t `atIndex` (idx1 :: Idx ('D1 i)) ) :: [Float]
       xs === ys
 
 tests :: IO Bool
