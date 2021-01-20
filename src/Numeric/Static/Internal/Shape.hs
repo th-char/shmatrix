@@ -9,6 +9,7 @@
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
+{-# LANGUAGE BangPatterns #-}
 module Numeric.Static.Internal.Shape where
 
 import           Data.Constraint
@@ -55,10 +56,12 @@ singToIndex s = case s of
     D2Sing a@SNat b@SNat               -> Idx2 (snatToInt a) (snatToInt b)
     D3Sing a@SNat b@SNat c@SNat        -> Idx3 (snatToInt a) (snatToInt b) (snatToInt c)
     D4Sing a@SNat b@SNat c@SNat d@SNat -> Idx4 (snatToInt a) (snatToInt b) (snatToInt c) (snatToInt d)
-  where
-    snatToInt :: forall n. KnownNat n => SNat n -> Int
-    snatToInt SNat = fromIntegral . natVal $ (Proxy :: Proxy n)
 
+snatToInt :: forall n. KnownNat n => SNat n -> Int
+snatToInt SNat = fromIntegral . natVal $ (Proxy :: Proxy n)
+
+proxyToInt :: forall n. KnownNat n => Proxy n -> Int
+proxyToInt Proxy = fromIntegral . natVal $ (Proxy :: Proxy n)
 
 -- Index types
 
@@ -72,6 +75,30 @@ idx2 = sing
 
 idx3 :: SingI ('D3 a b c) => Sing ('D3 a b c)
 idx3 = sing
+
+enumerateIdx :: forall shape. SShape shape -> [Index]
+enumerateIdx s = case singToIndex s of 
+  Idx1 !a          -> [Idx1 i | i <- [0..a-1]]
+  Idx2 !a !b       -> [Idx2 i j | i <- [0..a-1], j <- [0..b-1]]
+  Idx3 !a !b !c    -> [Idx3 i j k | i <- [0..a-1], j <- [0..b-1], k <- [0..c-1]]
+  Idx4 !a !b !c !d -> [Idx4 i j k l | i <- [0..a-1], j <- [0..b-1], k <- [0..c-1], l <- [0..d-1]]
+
+linearIdx2 :: Int -> Int -> Int -> Int 
+linearIdx2 dim1 x y = dim1 * x + y
+{-# INLINE linearIdx2 #-}
+
+linearIdx3 :: Int -> Int -> Int -> Int -> Int -> Int 
+linearIdx3 dim1 dim2 x y z = dim1 * dim2 * x + dim2 * y + z
+{-# INLINE linearIdx3 #-}
+
+linearIdx4 :: Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int 
+linearIdx4 dim1 dim2 dim3 w x y z = dim1 * dim2 * dim3 * w + dim2 * dim3 * x + dim3 * y + z
+{-# INLINE linearIdx4 #-}
+
+inRange :: Int -> Int -> Bool 
+inRange i x = 0 <= i && i < x 
+{-# INLINE inRange #-}
+
 
 -- Lots of type families
 

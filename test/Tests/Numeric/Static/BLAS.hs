@@ -24,7 +24,7 @@ prop_can_create_tensor_from_list_of_floats = property $ do
 
   case someNatVal $ fromIntegral l of
     Just (SomeNat (_ :: Proxy length)) -> do
-      let t = fromList xs :: Tensor 'BLAS 'Float ('D1 length)
+      let t = fromList xs :: Tensor 'BLAS Float ('D1 length)
       t `seq` success
 
 prop_can_index_float_tensor :: Property
@@ -34,12 +34,9 @@ prop_can_index_float_tensor = property $ do
 
   case someNatVal $ fromIntegral l of
     Just (SomeNat (_ :: Proxy length)) -> do
-      let t  = fromList xs :: Tensor 'BLAS 'Float ('D1 length)
+      let t  = fromList xs :: Tensor 'BLAS Float ('D1 length)
           ys = ( (flip map) [0..l-1] $ \i ->
-            case ( someNatVal $ fromIntegral i ) of
-              Just (SomeNat (_ :: Proxy i)) ->
-                case (unsafeCoerce (Dict :: Dict ((), ())) :: Dict (IsInRange ('D1 i) ('D1 length)) ) of
-                  Dict -> t `atIndex` (idx1 :: Idx ('D1 i)) ) :: [Float]
+            t ! Idx1 i )
       xs === ys
 
 tests :: IO Bool

@@ -29,22 +29,26 @@ data DataFormat = NHWC
 
 data Backend = BLAS
 
-data Tensor (backend :: Backend) (dtype :: DataType) (shape :: Shape) where
-  UnsafeMkTensor :: ( d ~ ToConcreteType dtype
-                    , Storable d
-                    , KnownShape shape )
-                 => {-# UNPACK #-} !Int
-                 -> {-# UNPACK #-} !DataFormat
-                 -> {-# UNPACK #-} !(ForeignPtr d)
-                 -> Tensor backend dtype shape
+-- type family ToConcreteType (dtype :: DataType) :: Type where
+--   ToConcreteType 'Float  = Float
+--   ToConcreteType 'Double = Double
+--   ToConcreteType x       = TypeError ('Text "Datatype is not supported")
 
-type family ToConcreteType (dtype :: DataType) :: Type where
-  ToConcreteType 'Float  = Float
-  ToConcreteType 'Double = Double
-  ToConcreteType x       = TypeError ('Text "Datatype is not supported")
+class CreatableTensor  (backend :: Backend) (dtype :: Type) (shape :: Shape) where
+  data Tensor (backend :: Backend) (dtype :: Type) (shape :: Shape)
 
-class CreatableTensor (backend :: Backend) (dtype :: DataType) (shape :: Shape) where
-  fromList :: [ToConcreteType dtype] -> Tensor backend dtype shape
+  -- * functions to create a tensor
 
-class IndexableTensor (backend :: Backend) (dtype :: DataType) (shape :: Shape) (index :: Shape) where
-  atIndex :: ( IsInRange index shape ) => Tensor backend dtype shape -> Idx index -> ToConcreteType dtype
+  fromList :: [dtype] -> Tensor backend dtype shape
+
+  build :: (Index -> dtype) -> Tensor backend dtype shape 
+
+class CreatableTensor backend dtype shape => IndexableTensor (backend :: Backend) (dtype :: Type) (shape :: Shape) where 
+  -- | type level indexing using singleton, will catch out of bounds error at compile time
+  typedIndex :: ( IsInRange index shape ) => Tensor backend dtype shape -> Idx index -> dtype
+
+  -- | term level indexing to prevent having to unsafe coerce the constraint for typedIndex
+  index :: Tensor backend dtype shape -> Index -> dtype
+
+(!) :: IndexableTensor backend dtype shape => Tensor backend dtype shape -> Index -> dtype
+(!) = index

@@ -29,6 +29,7 @@ library
     , constraints
     , singletons  >= 2.6
     , ghc-typelits-extra
+    , ghc-typelits-knownnat >=0.7.4
     , hedgehog
   hs-source-dirs:
       src
