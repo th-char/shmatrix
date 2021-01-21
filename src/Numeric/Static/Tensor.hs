@@ -41,6 +41,8 @@ class Storable dtype => CreatableTensor  (backend :: Backend) (dtype :: Type) wh
 
   fromList :: ( KnownNat s, s ~ ShapeSize shape ) => [dtype] -> Tensor backend dtype shape
 
+  toList :: Tensor backend dtype shape -> [dtype]
+
   build :: ( KnownNat s, s ~ ShapeSize shape, SingI shape ) => (Index -> dtype) -> Tensor backend dtype shape 
 
 -- todo: remove shape from type class

@@ -49,6 +49,14 @@ instance ( Storable dtype )
                 go !i (!y:ys) = pokeElemOff ptr' i y >> go (i + 1) ys
             go 0 xs
             return $ UnsafeMkBLASTensor n NCHW ptr
+  
+  toList (UnsafeMkBLASTensor n NCHW ptr) =
+    unsafePerformIO $ do 
+      withForeignPtr ptr $ \ptr' -> do
+        let go 0 _ dys = return (dys [])  
+            go k i dys = do y <- peekElemOff ptr' i
+                            go (k - 1) (i + 1) ( dys . (y:) )
+        go n 0 id
 
   build :: forall s shape. ( KnownNat s, s ~ ShapeSize shape, SingI shape ) => (Index -> dtype) -> Tensor 'BLAS dtype shape
   build f =
@@ -82,28 +90,28 @@ instance ( KnownNat a, KnownNat b, Storable dtype )
   => IndexableTensor 'BLAS dtype ('D2 a b) where
 
   index (UnsafeMkBLASTensor n format ptr) (Idx2 !i !j) =
-    let !a = proxyToInt (Proxy :: Proxy a)
-        !b = proxyToInt (Proxy :: Proxy b)
-        i' = linearIdx2 a i j
-    in  if inRange i a && inRange j b
+    let !dim1 = proxyToInt (Proxy :: Proxy a)
+        !dim2 = proxyToInt (Proxy :: Proxy b)
+        i'    = linearIdx2 dim2 i j
+    in  if inRange i dim1 && inRange j dim2
         then unsafeLinearIndex ptr i'
         else error "Index out of range"
 
   typedIndex (UnsafeMkBLASTensor n format ptr) s =
     let Idx2 !x !y = singToIndex s
         dim1       = proxyToInt (Proxy :: Proxy a)
-        i         = linearIdx2 dim1 x y
+        i          = linearIdx2 dim1 x y
     in  unsafeLinearIndex ptr i
 
 instance ( KnownNat a, KnownNat b, KnownNat c, Storable dtype )
   => IndexableTensor 'BLAS dtype ('D3 a b c) where
 
   index (UnsafeMkBLASTensor n format ptr) (Idx3 !i !j !k) =
-    let !a = proxyToInt (Proxy :: Proxy a)
-        !b = proxyToInt (Proxy :: Proxy b)
-        !c = proxyToInt (Proxy :: Proxy c)
-        i' = linearIdx3 a b i j k
-    in  if inRange i a && inRange j b && inRange k c
+    let !dim1 = proxyToInt (Proxy :: Proxy a)
+        !dim2 = proxyToInt (Proxy :: Proxy b)
+        !dim3 = proxyToInt (Proxy :: Proxy c)
+        i' = linearIdx3 dim2 dim3 i j k
+    in  if inRange i dim1 && inRange j dim2 && inRange k dim3
         then unsafeLinearIndex ptr i'
         else error "Index out of range"
 
@@ -122,7 +130,7 @@ instance ( KnownNat a, KnownNat b, KnownNat c, KnownNat d, Storable dtype )
         !dim2 = proxyToInt (Proxy :: Proxy b)
         !dim3 = proxyToInt (Proxy :: Proxy c)
         !dim4 = proxyToInt (Proxy :: Proxy d)
-        i' = linearIdx4 dim1 dim2 dim3 i j k l
+        i' = linearIdx4 dim2 dim3 dim4 i j k l
     in  if inRange i dim1 && inRange j dim2 && inRange k dim3 && inRange l dim4
         then unsafeLinearIndex ptr i'
         else error "Index out of range"
@@ -154,7 +162,6 @@ instance Storable dtype => TraversableTensor 'BLAS dtype where
   -- Can assume the sizes are the same since it type checks
   -- pls dont unsafeCoerce tensor shapes
   -- todo: should i check the sizes match ?
-  -- todo: check formats
   zipTensors f (UnsafeMkBLASTensor n NCHW ptr1) (UnsafeMkBLASTensor _ NCHW ptr2) =
     unsafePerformIO $ do
       dstPtr <- allocatePtr n

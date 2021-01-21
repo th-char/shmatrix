@@ -2,9 +2,7 @@ import           Control.Monad
 import           System.Exit
 import           System.IO
 
-import Hedgehog
-
-import qualified Tests.Numeric.Static.BLAS
+import qualified Test.Numeric.Static.BLAS
 
 main :: IO ()
 main = do
@@ -12,7 +10,7 @@ main = do
   hSetBuffering stderr LineBuffering 
 
   results <- sequence [ 
-      Tests.Numeric.Static.BLAS.tests
+      Test.Numeric.Static.BLAS.tests
     ] 
 
   unless (and results) $ 

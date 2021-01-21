@@ -84,15 +84,15 @@ enumerateIdx s = case singToIndex s of
   Idx4 !a !b !c !d -> [Idx4 i j k l | i <- [0..a-1], j <- [0..b-1], k <- [0..c-1], l <- [0..d-1]]
 
 linearIdx2 :: Int -> Int -> Int -> Int 
-linearIdx2 dim1 x y = dim1 * x + y
+linearIdx2 dim2 x y = dim2 * x + y
 {-# INLINE linearIdx2 #-}
 
 linearIdx3 :: Int -> Int -> Int -> Int -> Int -> Int 
-linearIdx3 dim1 dim2 x y z = dim1 * dim2 * x + dim2 * y + z
+linearIdx3 dim2 dim3 x y z = dim2 * dim3 * x + dim3 * y + z
 {-# INLINE linearIdx3 #-}
 
 linearIdx4 :: Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int 
-linearIdx4 dim1 dim2 dim3 w x y z = dim1 * dim2 * dim3 * w + dim2 * dim3 * x + dim3 * y + z
+linearIdx4 dim2 dim3 dim4 w x y z = dim2 * dim3 * dim4 * w + dim3 * dim4 * x + dim4 * y + z
 {-# INLINE linearIdx4 #-}
 
 inRange :: Int -> Int -> Bool 
