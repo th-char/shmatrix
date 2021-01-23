@@ -130,5 +130,21 @@ prop_zip_tensors_same_as_zip_lists = property $ do
           ys = toList t'
       refys === ys
 
+prop_fold_tensors_same_as_foldl_lists :: Property
+prop_fold_tensors_same_as_foldl_lists = property $ do
+  w  <- forAll $ Gen.int (Range.constant 1 10)
+  h  <- forAll $ Gen.int (Range.constant 1 10)
+  let l = h * w
+  xs <- forAll $ genFloatList l
+  f  <- blindForAll $ Gen.element [(+), (*)]
+
+  let refy = foldl f 1 xs
+
+  case ( someNatVal $ fromIntegral w, someNatVal $ fromIntegral h ) of
+    ( Just (SomeNat (_ :: Proxy w)), Just (SomeNat (_ :: Proxy h)) ) -> do
+      let t  = fromList xs :: Tensor 'BLAS Float ('D2 h w)
+          y = foldTensor f 1 t
+      refy === y
+
 tests :: IO Bool
 tests = checkParallel $$(discover)

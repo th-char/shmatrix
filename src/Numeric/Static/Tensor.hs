@@ -19,6 +19,7 @@ import           Data.Singletons
 import           Foreign.ForeignPtr
 import           Foreign.Storable
 import           GHC.TypeLits
+import           System.Random.MWC             (UniformRange)
 
 import           Numeric.Static.Internal.Shape
 
@@ -43,10 +44,14 @@ class Storable dtype => CreatableTensor  (backend :: Backend) (dtype :: Type) wh
 
   toList :: Tensor backend dtype shape -> [dtype]
 
-  build :: ( KnownNat s, s ~ ShapeSize shape, SingI shape ) => (Index -> dtype) -> Tensor backend dtype shape 
+  build :: ( KnownNat s, s ~ ShapeSize shape, SingI shape ) => (Index -> dtype) -> Tensor backend dtype shape
 
--- todo: remove shape from type class
-class CreatableTensor backend dtype => IndexableTensor (backend :: Backend) (dtype :: Type) (shape :: Shape) where 
+class CreatableTensor backend dtype => RandomTensor (backend :: Backend) (dtype :: Type) where
+  randomTensor :: ( KnownNat s, s ~ ShapeSize shape, UniformRange dtype ) => (dtype, dtype) -> IO (Tensor backend dtype shape)
+
+-- todo: remove shape from type class, probably by creating some singleton function that converts indexes to
+-- linear indexes ?
+class CreatableTensor backend dtype => IndexableTensor (backend :: Backend) (dtype :: Type) (shape :: Shape) where
   -- | type level indexing using singleton, will catch out of bounds error at compile time
   typedIndex :: ( IsInRange index shape ) => Tensor backend dtype shape -> Idx index -> dtype
 
@@ -58,20 +63,24 @@ class CreatableTensor backend dtype => IndexableTensor (backend :: Backend) (dty
 (!) :: IndexableTensor backend dtype shape => Tensor backend dtype shape -> Index -> dtype
 (!) = index
 
-
--- todo: make the src and destination datatypes different, they dont have to be the same. Although this 
--- type class def probably wont work 
-class CreatableTensor backend dtype => TraversableTensor backend dtype where 
+-- todo: make the src and destination datatypes different, they dont have to be the same. Although this
+-- type class def probably wont work
+class CreatableTensor backend dtype => TraversableTensor backend dtype where
   mapTensor :: (dtype -> dtype) -> Tensor backend dtype shape -> Tensor backend dtype shape
 
   zipTensors :: (dtype -> dtype -> dtype) -> Tensor backend dtype shape -> Tensor backend dtype shape -> Tensor backend dtype shape
 
-class CreatableTensor backend dtype => MathTensor backend dtype where 
-  mmul2d :: ( KnownNat a, KnownNat b, KnownNat c ) 
+  foldTensor :: (a -> dtype -> a) -> a -> Tensor backend dtype shape-> a
+
+class ( TraversableTensor backend dtype, Num dtype ) => MathTensor backend dtype where
+  mmul2d :: ( KnownNat a, KnownNat b, KnownNat c )
          => Tensor backend dtype ('D2 a b) -> Tensor backend dtype ('D2 b c) -> Tensor backend dtype ('D2 a c)
 
   add :: Tensor backend dtype shape -> Tensor backend dtype shape -> Tensor backend dtype shape
+  add = zipTensors (+)
 
   mul :: Tensor backend dtype shape -> Tensor backend dtype shape -> Tensor backend dtype shape
+  mul = zipTensors (*)
 
   sumTensor :: Tensor backend dtype shape -> dtype
+  sumTensor = foldTensor (+) 0

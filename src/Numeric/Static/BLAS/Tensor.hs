@@ -16,6 +16,7 @@
 {-# LANGUAGE UndecidableInstances  #-}
 module Numeric.Static.BLAS.Tensor where
 
+import           Control.DeepSeq
 import           Data.Kind
 import           Data.Proxy
 import           Data.Singletons
@@ -23,6 +24,7 @@ import           Foreign.ForeignPtr
 import           Foreign.Storable
 import           GHC.TypeLits
 import           System.IO.Unsafe
+import           System.Random.MWC
 
 import           Numeric.Static.Internal.Memory
 import           Numeric.Static.Internal.Shape
@@ -49,11 +51,11 @@ instance ( Storable dtype )
                 go !i (!y:ys) = pokeElemOff ptr' i y >> go (i + 1) ys
             go 0 xs
             return $ UnsafeMkBLASTensor n NCHW ptr
-  
+
   toList (UnsafeMkBLASTensor n NCHW ptr) =
-    unsafePerformIO $ do 
+    unsafePerformIO $ do
       withForeignPtr ptr $ \ptr' -> do
-        let go 0 _ dys = return (dys [])  
+        let go 0 _ dys = return (dys [])
             go k i dys = do y <- peekElemOff ptr' i
                             go (k - 1) (i + 1) ( dys . (y:) )
         go n 0 id
@@ -68,6 +70,26 @@ instance ( Storable dtype )
             let go  _ []      = return ()
                 go !i (!y:ys) = let !z = f y in pokeElemOff ptr' i z >> go (i + 1) ys
             go 0 idxs
+            return $ UnsafeMkBLASTensor n NCHW ptr
+
+instance NFData (Tensor 'BLAS Float shape) where
+  rnf (UnsafeMkBLASTensor 0 NCHW ptr) = ()
+  rnf (UnsafeMkBLASTensor _ _    ptr) = rnf (unsafeLinearIndex ptr 0)
+
+instance ( Storable dtype ) => RandomTensor 'BLAS dtype where
+  randomTensor :: forall s shape. ( KnownNat s, s ~ ShapeSize shape, UniformRange dtype )
+               => (dtype, dtype) -> IO (Tensor 'BLAS dtype shape)
+  randomTensor (low, high) =
+    let !n = fromIntegral $ natVal (Proxy :: Proxy s)
+    in  do
+          gen <- createSystemRandom
+          ptr <- allocatePtr n
+          withForeignPtr ptr $ \ptr' -> do
+            let go  0  _ = return ()
+                go !k !i = do x <- uniformRM (low, high) gen
+                              pokeElemOff ptr' i x
+                              go (k - 1) (i + 1)
+            go n 0
             return $ UnsafeMkBLASTensor n NCHW ptr
 
 unsafeLinearIndex :: Storable dtype => ForeignPtr dtype -> Int -> dtype
@@ -175,3 +197,13 @@ instance Storable dtype => TraversableTensor 'BLAS dtype where
                               go (k - 1) (i + 1)
             go n 0
       return $ UnsafeMkBLASTensor n NCHW dstPtr
+
+  foldTensor f a (UnsafeMkBLASTensor n NCHW ptr) =
+    unsafePerformIO $ do
+      withForeignPtr ptr $ \ptr' ->
+        let go 0  _  !acc = return acc
+            go !k !i !acc = do x <- peekElemOff ptr' i
+                               let !y = f acc x in go (k - 1) (i + 1) y
+        in  go n 0 a
+
+instance ( Storable dtype, Num dtype ) => MathTensor 'BLAS dtype where
