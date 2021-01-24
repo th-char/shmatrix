@@ -14,7 +14,7 @@
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
-module Trident.Static.BLAS.Tensor where
+module Trident.Static.BLAS where
 
 import           Control.DeepSeq
 import           Data.Kind
@@ -28,6 +28,7 @@ import           System.Random.MWC
 
 import           Trident.Core.Memory
 import           Trident.Core.Shape
+import           Trident.Internal.OpenBLAS
 import           Trident.Static.Tensor
 
 -- data BLAS = BLAS
@@ -37,7 +38,7 @@ instance ( Storable dtype )
 
   data Tensor 'BLAS dtype shape
     = UnsafeMkBLASTensor {-# UNPACK #-} !Int
-                         {-# UNPACK #-} !DataFormat
+                                        !DataFormat
                          {-# UNPACK #-} !(ForeignPtr dtype)
 
   -- TODO: need to work out where to do the shape check, is it worth possible space leak ?
@@ -205,3 +206,17 @@ instance Storable dtype => TraversableTensor 'BLAS dtype where
             go !k !i !acc = do x <- peekElemOff ptr' i
                                let !y = f acc x in go (k - 1) (i + 1) y
         in  go n 0 a
+
+instance MathTensor 'BLAS Float where
+  gemm :: forall a b c. ( KnownNat a, KnownNat b, KnownNat c )
+       => Tensor 'BLAS Float ('D2 a b) -> Transpose
+       -> Tensor 'BLAS Float ('D2 b c) -> Transpose
+       -> Float
+       -> Tensor 'BLAS Float ('D2 a c)
+  gemm (UnsafeMkBLASTensor _ NCHW aPtr) aT (UnsafeMkBLASTensor _ NCHW bPtr) bT alpha =
+    let !a     = proxyToInt (Proxy :: Proxy a)
+        !b     = proxyToInt (Proxy :: Proxy b)
+        !c     = proxyToInt (Proxy :: Proxy c)
+        !n     = a * c
+        !cPtr = cblas_sgemm RowMajor aPtr aT bPtr bT a c b alpha
+    in  UnsafeMkBLASTensor n NCHW cPtr

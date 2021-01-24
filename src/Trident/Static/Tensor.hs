@@ -26,7 +26,7 @@ import           Trident.Core.Shape
 data DataType = Float
               | Double
 
-data DataFormat = NCHW
+data DataFormat = NCHW | NHWC 
 
 data Transpose = NoTranspose | Tranpose | Conj | ConjTranpose
 

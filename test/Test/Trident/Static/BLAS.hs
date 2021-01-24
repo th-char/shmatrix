@@ -10,11 +10,13 @@ import           Data.Proxy
 import           GHC.TypeLits
 
 import           Hedgehog
-import qualified Hedgehog.Gen                  as Gen
-import qualified Hedgehog.Range                as Range
+import qualified Hedgehog.Gen               as Gen
+import qualified Hedgehog.Range             as Range
 
-import           Trident.Static.BLAS.Tensor
+import qualified Numeric.LinearAlgebra      as H
+
 import           Trident.Core.Shape
+import           Trident.Static.BLAS
 import           Trident.Static.Tensor
 
 import           Test.Utils.Hedgehog
@@ -38,7 +40,7 @@ prop_tensor_list_roundtrip = property $ do
     Just (SomeNat (_ :: Proxy length)) -> do
       let t  = fromList xs :: Tensor 'BLAS Float ('D1 length)
           ys = toList t
-      xs === ys 
+      xs === ys
 
 prop_can_index_1d_float_tensor :: Property
 prop_can_index_1d_float_tensor = property $ do
@@ -145,6 +147,28 @@ prop_fold_tensors_same_as_foldl_lists = property $ do
       let t  = fromList xs :: Tensor 'BLAS Float ('D2 h w)
           y = foldTensor f 1 t
       refy === y
+
+prop_multiplying_two_tensors_same_as_hmatrix :: Property
+prop_multiplying_two_tensors_same_as_hmatrix = property $ do
+  a  <- forAll $ Gen.int (Range.constant 1 10)
+  b  <- forAll $ Gen.int (Range.constant 1 10)
+  c  <- forAll $ Gen.int (Range.constant 1 10)
+
+  xs <- forAll $ genFloatList (a * b)
+  ys <- forAll $ genFloatList (b * c)
+
+  let m1    = (a H.>< b) xs
+      m2    = (b H.>< c) ys
+      refzs = concat . H.toLists $ m1 H.<> m2
+
+  case ( someNatVal $ fromIntegral a, someNatVal $ fromIntegral b, someNatVal $ fromIntegral c ) of
+    ( Just (SomeNat (_ :: Proxy a)), Just (SomeNat (_ :: Proxy b)), Just (SomeNat (_ :: Proxy c)) ) -> do
+      let t1  = fromList xs :: Tensor 'BLAS Float ('D2 a b)
+          t2  = fromList ys :: Tensor 'BLAS Float ('D2 b c)
+          t   = mmul t1 t2
+          zs  = toList t
+
+      refzs === zs
 
 tests :: IO Bool
 tests = checkParallel $$(discover)
