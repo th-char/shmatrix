@@ -12,7 +12,7 @@ import           Criterion
 import           Criterion.Main
 
 import qualified Numeric.LinearAlgebra as H
-import           Numeric.Static
+import           Trident.Static
 
 import qualified Data.Massiv.Array     as MA
 
@@ -35,7 +35,7 @@ main = do
         [ env (H.rand 10 10)
             $ \ ~m -> bench "hmatrix" $ nf H.sumElements m
         , env random10by10Tensor
-            $ \ ~m -> bench "shmatrix" $ nf sumTensor m
+            $ \ ~m -> bench "trident" $ nf sumTensor m
         , env (randomMassivMatrix 10 10)
             $ \ ~m -> bench "massiv" $ nf (sqrt . MA.foldlS (+) 0) m
         ]
@@ -43,7 +43,7 @@ main = do
         [ env (H.rand 100 100)     
             $ \ ~m -> bench "hmatrix" $ nf H.sumElements m
         , env random100by100Tensor 
-            $ \ ~m -> bench "shmatrix" $ nf sumTensor m
+            $ \ ~m -> bench "trident" $ nf sumTensor m
         , env (randomMassivMatrix 100 100)
             $ \ ~m -> bench "massiv" $ nf (sqrt . MA.foldlS (+) 0) m
         ]

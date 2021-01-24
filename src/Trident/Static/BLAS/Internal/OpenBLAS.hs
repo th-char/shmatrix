@@ -1,4 +1,4 @@
-module Numeric.Static.BLAS.Internal.OpenBLAS where
+module Trident.Static.BLAS.Internal.OpenBLAS where
 
 -- see: https://developer.apple.com/documentation/accelerate/1513264-cblas_sgemm
 type GemmFFI dtype

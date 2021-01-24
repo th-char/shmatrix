@@ -11,7 +11,7 @@
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
-module Numeric.Static.Tensor where
+module Trident.Static.Tensor where
 
 import           Data.Kind
 import           Data.Proxy
@@ -21,7 +21,7 @@ import           Foreign.Storable
 import           GHC.TypeLits
 import           System.Random.MWC             (UniformRange)
 
-import           Numeric.Static.Core.Shape
+import           Trident.Core.Shape
 
 data DataType = Float
               | Double

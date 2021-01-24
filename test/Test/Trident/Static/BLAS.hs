@@ -4,7 +4,7 @@
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell     #-}
-module Test.Numeric.Static.BLAS where
+module Test.Trident.Static.BLAS where
 
 import           Data.Proxy
 import           GHC.TypeLits
@@ -13,9 +13,9 @@ import           Hedgehog
 import qualified Hedgehog.Gen                  as Gen
 import qualified Hedgehog.Range                as Range
 
-import           Numeric.Static.BLAS.Tensor
-import           Numeric.Static.Core.Shape
-import           Numeric.Static.Tensor
+import           Trident.Static.BLAS.Tensor
+import           Trident.Core.Shape
+import           Trident.Static.Tensor
 
 import           Test.Utils.Hedgehog
 

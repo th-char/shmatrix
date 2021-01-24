@@ -2,7 +2,7 @@ import           Control.Monad
 import           System.Exit
 import           System.IO
 
-import qualified Test.Numeric.Static.BLAS
+import qualified Test.Trident.Static.BLAS
 
 main :: IO ()
 main = do
@@ -10,7 +10,7 @@ main = do
   hSetBuffering stderr LineBuffering 
 
   results <- sequence [ 
-      Test.Numeric.Static.BLAS.tests
+      Test.Trident.Static.BLAS.tests
     ] 
 
   unless (and results) $ 

@@ -11,7 +11,7 @@
 {-# LANGUAGE UnboxedSums           #-}
 {-# LANGUAGE UnboxedTuples         #-}
 {-# LANGUAGE UndecidableInstances  #-}
-module Numeric.Static.Core.Memory where
+module Trident.Core.Memory where
 
 import           Data.Kind
 import           Data.Proxy

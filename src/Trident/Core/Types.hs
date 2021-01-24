@@ -1,4 +1,4 @@
-module Numeric.Static.Core.Types where 
+module Numeric.Core.Types where 
 
 type family Product (xs :: [Nat]) :: Nat where 
   Product '[]       = 1

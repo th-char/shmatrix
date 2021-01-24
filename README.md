@@ -1,4 +1,4 @@
-# shmatrix
+# Trident
 Statically Typed Matrix Library in Haskell
 
 Very very young library for matrix operations in Haskell, with support for nd arrays. 

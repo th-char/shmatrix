@@ -14,7 +14,7 @@
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
-module Numeric.Static.BLAS.Tensor where
+module Trident.Static.BLAS.Tensor where
 
 import           Control.DeepSeq
 import           Data.Kind
@@ -26,9 +26,9 @@ import           GHC.TypeLits
 import           System.IO.Unsafe
 import           System.Random.MWC
 
-import           Numeric.Static.Core.Memory
-import           Numeric.Static.Core.Shape
-import           Numeric.Static.Tensor
+import           Trident.Core.Memory
+import           Trident.Core.Shape
+import           Trident.Static.Tensor
 
 -- data BLAS = BLAS
 
