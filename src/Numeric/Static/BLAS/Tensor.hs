@@ -26,8 +26,8 @@ import           GHC.TypeLits
 import           System.IO.Unsafe
 import           System.Random.MWC
 
-import           Numeric.Static.Internal.Memory
-import           Numeric.Static.Internal.Shape
+import           Numeric.Static.Core.Memory
+import           Numeric.Static.Core.Shape
 import           Numeric.Static.Tensor
 
 -- data BLAS = BLAS
@@ -205,5 +205,3 @@ instance Storable dtype => TraversableTensor 'BLAS dtype where
             go !k !i !acc = do x <- peekElemOff ptr' i
                                let !y = f acc x in go (k - 1) (i + 1) y
         in  go n 0 a
-
-instance ( Storable dtype, Num dtype ) => MathTensor 'BLAS dtype where

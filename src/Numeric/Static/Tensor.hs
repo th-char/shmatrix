@@ -21,12 +21,14 @@ import           Foreign.Storable
 import           GHC.TypeLits
 import           System.Random.MWC             (UniformRange)
 
-import           Numeric.Static.Internal.Shape
+import           Numeric.Static.Core.Shape
 
 data DataType = Float
               | Double
 
 data DataFormat = NCHW
+
+data Transpose = NoTranspose | Tranpose | Conj | ConjTranpose
 
 data Backend = BLAS
 
@@ -73,8 +75,16 @@ class CreatableTensor backend dtype => TraversableTensor backend dtype where
   foldTensor :: (a -> dtype -> a) -> a -> Tensor backend dtype shape-> a
 
 class ( TraversableTensor backend dtype, Num dtype ) => MathTensor backend dtype where
-  mmul2d :: ( KnownNat a, KnownNat b, KnownNat c )
-         => Tensor backend dtype ('D2 a b) -> Tensor backend dtype ('D2 b c) -> Tensor backend dtype ('D2 a c)
+  -- performs alpha * A * B (potentially tranposing)
+  gemm :: ( KnownNat a, KnownNat b, KnownNat c )
+       => Tensor backend dtype ('D2 a b) -> Transpose
+       -> Tensor backend dtype ('D2 b c) -> Transpose
+       -> dtype
+       -> Tensor backend dtype ('D2 a c)
+  
+  mmul :: ( KnownNat a, KnownNat b, KnownNat c )
+       => Tensor backend dtype ('D2 a b) -> Tensor backend dtype ('D2 b c) -> Tensor backend dtype ('D2 a c)
+  mmul m1 m2 = gemm m1 NoTranspose m2 NoTranspose 1 
 
   add :: Tensor backend dtype shape -> Tensor backend dtype shape -> Tensor backend dtype shape
   add = zipTensors (+)

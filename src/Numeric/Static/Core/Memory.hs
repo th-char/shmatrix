@@ -11,7 +11,7 @@
 {-# LANGUAGE UnboxedSums           #-}
 {-# LANGUAGE UnboxedTuples         #-}
 {-# LANGUAGE UndecidableInstances  #-}
-module Numeric.Static.Internal.Memory where
+module Numeric.Static.Core.Memory where
 
 import           Data.Kind
 import           Data.Proxy
@@ -20,7 +20,6 @@ import           Foreign.Storable
 import           GHC.ForeignPtr
 import           GHC.TypeLits
 import           System.IO.Unsafe
-
 
 allocatePtr :: forall a. Storable a => Int -> IO (ForeignPtr a)
 allocatePtr n =

@@ -10,7 +10,7 @@
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
 {-# LANGUAGE BangPatterns #-}
-module Numeric.Static.Internal.Shape where
+module Numeric.Static.Core.Shape where
 
 import           Data.Constraint
 import           Data.Kind

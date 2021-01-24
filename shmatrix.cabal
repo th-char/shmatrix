@@ -20,8 +20,8 @@ library
   exposed-modules:
     Numeric.Static
     Numeric.Static.Tensor
-    Numeric.Static.Internal.Shape
-    Numeric.Static.Internal.Memory
+    Numeric.Static.Core.Shape
+    Numeric.Static.Core.Memory
     Numeric.Static.BLAS.Tensor
   -- other-modules:
   -- other-extensions:

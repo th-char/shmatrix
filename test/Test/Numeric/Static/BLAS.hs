@@ -14,7 +14,7 @@ import qualified Hedgehog.Gen                  as Gen
 import qualified Hedgehog.Range                as Range
 
 import           Numeric.Static.BLAS.Tensor
-import           Numeric.Static.Internal.Shape
+import           Numeric.Static.Core.Shape
 import           Numeric.Static.Tensor
 
 import           Test.Utils.Hedgehog
