@@ -220,3 +220,17 @@ instance MathTensor 'BLAS Float where
         !n     = a * c
         !cPtr = cblas_sgemm RowMajor aPtr aT bPtr bT a c b alpha
     in  UnsafeMkBLASTensor n NCHW cPtr
+
+instance MathTensor 'BLAS Double where
+  gemm :: forall a b c. ( KnownNat a, KnownNat b, KnownNat c )
+       => Tensor 'BLAS Double ('D2 a b) -> Transpose
+       -> Tensor 'BLAS Double ('D2 b c) -> Transpose
+       -> Double
+       -> Tensor 'BLAS Double ('D2 a c)
+  gemm (UnsafeMkBLASTensor _ NCHW aPtr) aT (UnsafeMkBLASTensor _ NCHW bPtr) bT alpha =
+    let !a     = proxyToInt (Proxy :: Proxy a)
+        !b     = proxyToInt (Proxy :: Proxy b)
+        !c     = proxyToInt (Proxy :: Proxy c)
+        !n     = a * c
+        !cPtr = cblas_dgemm RowMajor aPtr aT bPtr bT a c b alpha
+    in  UnsafeMkBLASTensor n NCHW cPtr

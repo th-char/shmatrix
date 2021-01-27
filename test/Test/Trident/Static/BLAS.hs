@@ -20,6 +20,8 @@ import           Trident.Static.BLAS
 import           Trident.Static.Tensor
 
 import           Test.Utils.Hedgehog
+import           Test.Utils.Comparable
+
 
 prop_can_create_tensor_from_list_of_floats :: Property
 prop_can_create_tensor_from_list_of_floats = property $ do
@@ -148,8 +150,8 @@ prop_fold_tensors_same_as_foldl_lists = property $ do
           y = foldTensor f 1 t
       refy === y
 
-prop_multiplying_two_tensors_same_as_hmatrix :: Property
-prop_multiplying_two_tensors_same_as_hmatrix = property $ do
+prop_multiplying_two_float_tensors_same_as_hmatrix :: Property
+prop_multiplying_two_float_tensors_same_as_hmatrix = property $ do
   a  <- forAll $ Gen.int (Range.constant 1 10)
   b  <- forAll $ Gen.int (Range.constant 1 10)
   c  <- forAll $ Gen.int (Range.constant 1 10)
@@ -169,6 +171,28 @@ prop_multiplying_two_tensors_same_as_hmatrix = property $ do
           zs  = toList t
 
       refzs === zs
+
+prop_multiplying_two_double_tensors_same_as_hmatrix :: Property
+prop_multiplying_two_double_tensors_same_as_hmatrix = property $ do
+  a  <- forAll $ Gen.int (Range.constant 1 10)
+  b  <- forAll $ Gen.int (Range.constant 1 10)
+  c  <- forAll $ Gen.int (Range.constant 1 10)
+
+  xs <- forAll $ genDoubleList (a * b)
+  ys <- forAll $ genDoubleList (b * c)
+
+  let m1    = (a H.>< b) xs
+      m2    = (b H.>< c) ys
+      refzs = concat . H.toLists $ m1 H.<> m2
+
+  case ( someNatVal $ fromIntegral a, someNatVal $ fromIntegral b, someNatVal $ fromIntegral c ) of
+    ( Just (SomeNat (_ :: Proxy a)), Just (SomeNat (_ :: Proxy b)), Just (SomeNat (_ :: Proxy c)) ) -> do
+      let t1  = fromList xs :: Tensor 'BLAS Double ('D2 a b)
+          t2  = fromList ys :: Tensor 'BLAS Double ('D2 b c)
+          t   = mmul t1 t2
+          zs  = toList t
+
+      refzs `isSimilarTo` zs
 
 tests :: IO Bool
 tests = checkParallel $$(discover)

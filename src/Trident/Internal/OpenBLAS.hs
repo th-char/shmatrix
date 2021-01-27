@@ -1,14 +1,20 @@
 {-# LANGUAGE BangPatterns #-}
 
-module Trident.Internal.OpenBLAS where
+module Trident.Internal.OpenBLAS (
+    MatrixOrder(..)
 
-import Foreign.ForeignPtr
-import Foreign.C.Types
-import Foreign.Ptr
-import System.IO.Unsafe
+  , cblas_dgemm
+  , cblas_sgemm
+  ) where
 
-import Trident.Static.Tensor
-import Trident.Core.Memory
+import           Foreign.C.Types
+import           Foreign.ForeignPtr
+import           Foreign.Ptr
+import           Foreign.Storable
+import           System.IO.Unsafe
+
+import           Trident.Core.Memory
+import           Trident.Static.Tensor
 
 -- values come from https://github.com/xianyi/OpenBLAS/blob/3628b22d49bde86c022ebd7c42eef4d9297e2bb4/cblas.h#L54
 {-
@@ -63,6 +69,35 @@ foreign import ccall unsafe "cblas_dgemm"
   cblas_dgemm_unsafe :: GemmFFI Double
 
 -- todo: can I use the pattern match on RealWorld# here ?
+cblas_gemm_helper :: ( Num a, Storable a )
+                  => GemmFFI a         -- ^ gemm function
+                  -> MatrixOrder       -- ^ data ordering
+                  -> ForeignPtr a      -- ^ matrix A
+                  -> Transpose         -- ^ specifies whether to transpose matrix A
+                  -> ForeignPtr a      -- ^ matrix B
+                  -> Transpose         -- ^ specifies whether to transpose matrix B
+                  -> Int               -- ^ Number of rows in matrices A and C
+                  -> Int               -- ^ Number of columns in matrices B and C
+                  -> Int               -- ^ Number of columns in matrix A; number of rows in matrix B
+                  -> a                 -- ^ alpha
+                  -> ForeignPtr a      -- ^ alpha * A * B
+cblas_gemm_helper gemm_ffi RowMajor !aPtr !aT !bPtr !bT !m !n !k !alpha = unsafePerformIO $! do
+  cPtr <- allocatePtr (m * n)
+
+  let !transA = tranposeToCBLASTranpose aT
+      !transB = tranposeToCBLASTranpose bT
+      !order  = orderToCBLASEnum RowMajor
+      !m'     = toCInt m
+      !n'     = toCInt n
+      !k'     = toCInt k
+
+  withForeignPtr aPtr $ \aPtr' ->
+    withForeignPtr bPtr $ \bPtr' ->
+      withForeignPtr cPtr $ \cPtr' ->
+        gemm_ffi order transA transB m' n' k' alpha aPtr' k' bPtr' n' 0 cPtr' n'
+
+  return $! cPtr
+
 cblas_sgemm :: MatrixOrder       -- ^ data ordering
             -> ForeignPtr Float  -- ^ matrix A
             -> Transpose         -- ^ specifies whether to transpose matrix A
@@ -73,19 +108,18 @@ cblas_sgemm :: MatrixOrder       -- ^ data ordering
             -> Int               -- ^ Number of columns in matrix A; number of rows in matrix B
             -> Float             -- ^ alpha
             -> ForeignPtr Float  -- ^ alpha * A * B
-cblas_sgemm RowMajor !aPtr !aT !bPtr !bT !m !n !k !alpha = unsafePerformIO $! do 
-  cPtr <- allocatePtr (m * n)
+cblas_sgemm RowMajor !aPtr !aT !bPtr !bT !m !n !k !alpha =
+  cblas_gemm_helper cblas_sgemm_unsafe RowMajor aPtr aT bPtr bT m n k alpha
 
-  let !transA = tranposeToCBLASTranpose aT 
-      !transB = tranposeToCBLASTranpose bT 
-      !order  = orderToCBLASEnum RowMajor
-      !m'     = toCInt m
-      !n'     = toCInt n
-      !k'     = toCInt k
-  
-  withForeignPtr aPtr $ \aPtr' ->
-    withForeignPtr bPtr $ \bPtr' ->
-      withForeignPtr cPtr $ \cPtr' ->
-        cblas_sgemm_unsafe order transA transB m' n' k' alpha aPtr' k' bPtr' n' 0 cPtr' n'
-  
-  return $! cPtr
+cblas_dgemm :: MatrixOrder        -- ^ data ordering
+            -> ForeignPtr Double  -- ^ matrix A
+            -> Transpose          -- ^ specifies whether to transpose matrix A
+            -> ForeignPtr Double  -- ^ matrix B
+            -> Transpose          -- ^ specifies whether to transpose matrix B
+            -> Int                -- ^ Number of rows in matrices A and C
+            -> Int                -- ^ Number of columns in matrices B and C
+            -> Int                -- ^ Number of columns in matrix A; number of rows in matrix B
+            -> Double             -- ^ alpha
+            -> ForeignPtr Double  -- ^ alpha * A * B
+cblas_dgemm RowMajor !aPtr !aT !bPtr !bT !m !n !k !alpha =
+  cblas_gemm_helper cblas_dgemm_unsafe RowMajor aPtr aT bPtr bT m n k alpha
